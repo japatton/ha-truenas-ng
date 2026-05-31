@@ -32,7 +32,14 @@ def to_int(value: Any) -> int | None:
 
 
 def epoch_ms_to_datetime(value: Any) -> datetime | None:
-    """Convert a TrueNAS {"$date": ms} node or raw epoch-ms number to aware UTC datetime."""
+    """Convert a TrueNAS timestamp to an aware UTC datetime.
+
+    Accepts an already-decoded ``datetime`` (the truenas_api_client EJSON decoder turns the
+    wire form ``{"$date": ms}`` into a ``datetime``), a raw ``{"$date": ms}`` node, or an
+    epoch-milliseconds number.
+    """
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
     if isinstance(value, dict):
         value = value.get("$date")
     if not value:

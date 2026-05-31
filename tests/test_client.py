@@ -86,5 +86,12 @@ def test_coercion_helpers():
     assert result == datetime.fromtimestamp(1777880507, tz=timezone.utc)
     assert result.tzinfo is timezone.utc
 
+    # The real truenas_api_client EJSON decoder returns $date fields as datetime objects,
+    # not {"$date": ms} dicts — pass an aware datetime through, and make a naive one aware.
+    aware = datetime(2026, 5, 4, 7, 41, 47, tzinfo=timezone.utc)
+    assert epoch_ms_to_datetime(aware) is aware
+    assert epoch_ms_to_datetime(datetime(2026, 5, 4, 7, 41, 47)) == aware
+    assert epoch_ms_to_datetime(None) is None
+
     assert parsed({"parsed": 5}) == 5
     assert parsed(7) == 7
