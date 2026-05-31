@@ -1,0 +1,12 @@
+{
+  "domain": "truenas_ng",
+  "name": "TrueNAS (Native)",
+  "version": "0.1.0",
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "integration_type": "hub",
+  "documentation": "https://github.com/japatton/ha-truenas-ng",
+  "issue_tracker": "https://github.com/japatton/ha-truenas-ng/issues",
+  "codeowners": ["@japatton"],
+  "requirements": ["truenas_api_client @ git+https://github.com/truenas/api_client.git@TS-26.0.0-BETA.1"]
+}

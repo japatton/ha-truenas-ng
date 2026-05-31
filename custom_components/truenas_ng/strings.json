@@ -1,0 +1,193 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to TrueNAS",
+        "description": "Enter the connection details for your TrueNAS system. Create an API key under Credentials → API Keys.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "username": "Username",
+          "api_key": "API key",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with TrueNAS",
+        "description": "The stored API key for {host} was rejected. Enter a new API key.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure TrueNAS",
+        "description": "Update the connection details for your TrueNAS system.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "username": "Username",
+          "api_key": "API key",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This TrueNAS system is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Reconfiguration was successful.",
+      "wrong_host": "The credentials are for a different TrueNAS system."
+    }
+  },
+  "issues": {
+    "truenas_alert": {
+      "title": "TrueNAS alert: {klass}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Dismiss TrueNAS alert",
+            "description": "{alert}\n\nDismiss this alert on the TrueNAS server? This calls alert.dismiss and clears the repair."
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "version": {
+        "name": "Version"
+      },
+      "hostname": {
+        "name": "Hostname"
+      },
+      "model": {
+        "name": "Model"
+      },
+      "cores": {
+        "name": "CPU cores"
+      },
+      "memory_total": {
+        "name": "Total memory"
+      },
+      "uptime": {
+        "name": "Uptime"
+      },
+      "load_1m": {
+        "name": "Load (1 min)"
+      },
+      "load_5m": {
+        "name": "Load (5 min)"
+      },
+      "load_15m": {
+        "name": "Load (15 min)"
+      },
+      "ecc_memory": {
+        "name": "ECC memory"
+      },
+      "cpu_percent": {
+        "name": "CPU usage"
+      },
+      "cpu_temp": {
+        "name": "CPU temperature"
+      },
+      "memory_used": {
+        "name": "Memory used"
+      },
+      "memory_free": {
+        "name": "Memory free"
+      },
+      "memory_used_pct": {
+        "name": "Memory used %"
+      },
+      "alerts_active": {
+        "name": "Active alerts"
+      },
+      "pool_status": {
+        "name": "Status"
+      },
+      "pool_used": {
+        "name": "Used"
+      },
+      "pool_free": {
+        "name": "Free"
+      },
+      "pool_total": {
+        "name": "Total"
+      },
+      "pool_used_pct": {
+        "name": "Used %"
+      },
+      "pool_fragmentation": {
+        "name": "Fragmentation"
+      },
+      "pool_scrub_state": {
+        "name": "Scrub state"
+      },
+      "pool_scrub_finished": {
+        "name": "Scrub finished"
+      },
+      "pool_scrub_errors": {
+        "name": "Scrub errors"
+      },
+      "disk_temp": {
+        "name": "Temperature"
+      },
+      "disk_read_errors": {
+        "name": "Read errors"
+      },
+      "disk_write_errors": {
+        "name": "Write errors"
+      },
+      "disk_checksum_errors": {
+        "name": "Checksum errors"
+      },
+      "dataset_used": {
+        "name": "{dataset} used"
+      },
+      "dataset_available": {
+        "name": "{dataset} available"
+      },
+      "dataset_quota": {
+        "name": "{dataset} quota"
+      },
+      "dataset_used_pct": {
+        "name": "{dataset} used %"
+      },
+      "dataset_compressratio": {
+        "name": "{dataset} compression ratio"
+      },
+      "dataset_snapshots": {
+        "name": "{dataset} snapshots"
+      }
+    },
+    "binary_sensor": {
+      "pool_health": {
+        "name": "Health"
+      },
+      "disk_problem": {
+        "name": "Problem"
+      },
+      "service_running": {
+        "name": "{service}"
+      },
+      "alerts_critical": {
+        "name": "Critical alerts"
+      }
+    },
+    "button": {
+      "scrub": {
+        "name": "Scrub"
+      },
+      "reboot": {
+        "name": "Reboot"
+      },
+      "shutdown": {
+        "name": "Shut down"
+      }
+    }
+  }
+}

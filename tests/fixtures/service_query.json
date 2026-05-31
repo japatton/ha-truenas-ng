@@ -1,0 +1,1 @@
+[{"id":4,"service":"cifs","enable":true,"state":"RUNNING","pids":[21552]},{"id":5,"service":"ssh","enable":true,"state":"RUNNING","pids":[2200]},{"id":6,"service":"nfs","enable":false,"state":"STOPPED","pids":[]}]
