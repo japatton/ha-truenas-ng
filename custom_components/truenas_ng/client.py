@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import websocket
-from truenas_api_client import Client, ClientException
+from .truenas_api_client import Client, ClientException
 
 
 class TrueNASError(Exception):

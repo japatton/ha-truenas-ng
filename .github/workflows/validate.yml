@@ -11,17 +11,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: HACS validation
         uses: hacs/action@main
         with:
           category: integration
+          # brands assets are submitted to home-assistant/brands separately; ignore here
+          # so the lint passes (it is not required to install a custom repository).
+          ignore: brands
 
   hassfest:
     name: Hassfest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Hassfest validation
         uses: home-assistant/actions/hassfest@master
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install test dependencies
+        run: pip install pytest-homeassistant-custom-component==0.13.330 websocket-client==1.9.0
+      - name: Run tests
+        run: pytest tests/ -q

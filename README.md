@@ -76,4 +76,4 @@ If the API key is rotated or revoked, Home Assistant raises a reauth flow — en
 
 ## License
 
-[Apache-2.0](LICENSE). This project **imports** (never vendors) the LGPL-3.0 `truenas_api_client` library.
+[Apache-2.0](LICENSE). This integration **bundles** the TrueNAS reference client (`truenas_api_client`, LGPL-3.0) under [`custom_components/truenas_ng/truenas_api_client/`](custom_components/truenas_ng/truenas_api_client/), with its license preserved there. The library is unmodified and may be replaced per the LGPL; the only PyPI runtime dependency is `websocket-client`. (It is vendored rather than declared as a `git+` requirement because that package is not published to PyPI and HA cannot reliably install git requirements at runtime.)
