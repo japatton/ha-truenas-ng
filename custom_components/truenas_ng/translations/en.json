@@ -196,6 +196,11 @@
       "service_control": {
         "name": "{service}"
       }
+    },
+    "update": {
+      "os_update": {
+        "name": "Update"
+      }
     }
   }
 }

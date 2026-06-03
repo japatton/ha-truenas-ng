@@ -26,12 +26,13 @@ def test_scan_intervals() -> None:
 
 
 def test_platforms() -> None:
-    """PLATFORMS lists exactly sensor, binary_sensor, button, switch (in order)."""
+    """PLATFORMS lists exactly sensor, binary_sensor, button, switch, update (in order)."""
     assert const.PLATFORMS == [
         Platform.SENSOR,
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
         Platform.SWITCH,
+        Platform.UPDATE,
     ]
 
 
