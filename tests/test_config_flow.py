@@ -6,7 +6,6 @@ import json
 import pathlib
 from unittest.mock import MagicMock, patch
 
-import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import (
     CONF_API_KEY,
@@ -232,3 +231,42 @@ async def test_reconfigure_flow_updates_host(hass: HomeAssistant) -> None:
     assert entry.data[CONF_VERIFY_SSL] is False
     # unique_id is unchanged because host_id is stable.
     assert entry.unique_id == HOST_ID
+
+
+async def test_options_flow_sets_intervals_and_toggles(
+    hass: HomeAssistant, init_integration
+) -> None:
+    """The options flow stores intervals and group toggles on the entry."""
+    from custom_components.truenas_ng.const import (
+        CONF_ENABLE_DATASETS,
+        CONF_INTERVAL_STORAGE,
+    )
+
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_reload",
+        return_value=True,
+    ):
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_INTERVAL_STORAGE: 45,
+                "interval_datasets": 600,
+                "interval_system": 90,
+                "interval_reporting": 30,
+                "interval_update": 43200,
+                CONF_ENABLE_DATASETS: True,
+                "enable_disks": True,
+                "enable_reporting": False,
+                "enable_service_controls": True,
+            },
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert init_integration.options[CONF_INTERVAL_STORAGE] == 45
+    assert init_integration.options[CONF_ENABLE_DATASETS] is True
+    assert init_integration.options["enable_reporting"] is False

@@ -31,7 +31,8 @@ async def test_button_entities_created(hass: HomeAssistant, init_integration) ->
         for entry in registry.entities.values()
         if entry.domain == "button" and entry.platform == DOMAIN
     ]
-    assert len(button_entries) == 4
+    # 2 scrub + reboot + shutdown + 3 service restart buttons.
+    assert len(button_entries) == 7
 
     unique_ids = {entry.unique_id for entry in button_entries}
     assert f"{HOST_ID}_pool_1111111111111111111_scrub" in unique_ids
@@ -42,6 +43,24 @@ async def test_button_entities_created(hass: HomeAssistant, init_integration) ->
     # All buttons are config-category entities.
     for entry in button_entries:
         assert entry.entity_category is EntityCategory.CONFIG
+
+
+async def test_restart_button_press_calls_service_control(
+    hass: HomeAssistant, init_integration, mock_client
+) -> None:
+    """Pressing a service restart button calls service.control RESTART with job=True."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "button", DOMAIN, f"{HOST_ID}_service_ssh_restart"
+    )
+    assert entity_id is not None
+
+    mock_client.call.reset_mock()
+    await _press(hass, entity_id)
+
+    control = [c for c in mock_client.call.call_args_list if c.args[0] == "service.control"]
+    assert control[0].args == ("service.control", "RESTART", "ssh")
+    assert control[0].kwargs == {"job": True}
 
 
 async def test_scrub_button_press_calls_pool_scrub(

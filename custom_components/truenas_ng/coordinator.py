@@ -19,6 +19,7 @@ from .const import (
     SCAN_INTERVAL_REPORTING,
     SCAN_INTERVAL_STORAGE,
     SCAN_INTERVAL_SYSTEM,
+    SCAN_INTERVAL_UPDATE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +55,15 @@ class ReportingData:
     memory_used: int | None
     memory_free: int | None
     memory_used_percent: float | None
+
+
+@dataclass
+class UpdateData:
+    """Installed/available OS version snapshot for the UpdateCoordinator."""
+
+    installed_version: str | None
+    latest_version: str | None
+    raw_status: dict
 
 
 class TrueNASBaseCoordinator(DataUpdateCoordinator[_DataT]):
@@ -120,9 +130,13 @@ def _walk_topology_errors(pool: dict) -> dict[str, dict]:
 class StorageCoordinator(TrueNASBaseCoordinator[StorageData]):
     """Pools + disks, with per-disk temperature and ZFS error/status injection."""
 
-    def __init__(self, hass: HomeAssistant, client: TrueNASClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
         """Initialize the storage coordinator."""
-        super().__init__(hass, client, "TrueNAS Storage", SCAN_INTERVAL_STORAGE)
+        super().__init__(
+            hass, client, "TrueNAS Storage", interval or SCAN_INTERVAL_STORAGE
+        )
 
     def _fetch(self) -> StorageData:
         """Query pools/disks/temperatures and assemble StorageData."""
@@ -164,9 +178,13 @@ class StorageCoordinator(TrueNASBaseCoordinator[StorageData]):
 class DatasetCoordinator(TrueNASBaseCoordinator[dict[str, dict]]):
     """Datasets, flattened from the nested children[] tree, keyed by id path."""
 
-    def __init__(self, hass: HomeAssistant, client: TrueNASClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
         """Initialize the dataset coordinator."""
-        super().__init__(hass, client, "TrueNAS Datasets", SCAN_INTERVAL_DATASETS)
+        super().__init__(
+            hass, client, "TrueNAS Datasets", interval or SCAN_INTERVAL_DATASETS
+        )
 
     def _fetch(self) -> dict[str, dict]:
         """Query datasets (with snapshot counts) and flatten the tree."""
@@ -188,9 +206,13 @@ class DatasetCoordinator(TrueNASBaseCoordinator[dict[str, dict]]):
 class SystemCoordinator(TrueNASBaseCoordinator[SystemData]):
     """system.info + alert.list + service.query, services keyed by name."""
 
-    def __init__(self, hass: HomeAssistant, client: TrueNASClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
         """Initialize the system coordinator."""
-        super().__init__(hass, client, "TrueNAS System", SCAN_INTERVAL_SYSTEM)
+        super().__init__(
+            hass, client, "TrueNAS System", interval or SCAN_INTERVAL_SYSTEM
+        )
 
     def _fetch(self) -> SystemData:
         """Query system info, alerts, and services."""
@@ -213,11 +235,15 @@ class ReportingCoordinator(TrueNASBaseCoordinator[ReportingData]):
     """CPU busy %, CPU temperature, and memory usage derived from reporting graphs."""
 
     def __init__(
-        self, hass: HomeAssistant, client: TrueNASClient, physmem: int
+        self,
+        hass: HomeAssistant,
+        client: TrueNASClient,
+        physmem: int,
+        interval: int | None = None,
     ) -> None:
         """Initialize the reporting coordinator with total physical memory."""
         super().__init__(
-            hass, client, "TrueNAS Reporting", SCAN_INTERVAL_REPORTING
+            hass, client, "TrueNAS Reporting", interval or SCAN_INTERVAL_REPORTING
         )
         self._physmem = physmem
 
@@ -256,4 +282,43 @@ class ReportingCoordinator(TrueNASBaseCoordinator[ReportingData]):
             memory_used=memory_used,
             memory_free=memory_free,
             memory_used_percent=memory_used_percent,
+        )
+
+
+def _extract_new_version(new: Any) -> str | None:
+    """Pull a version string from update.status's status.new_version node.
+
+    The node is null when up to date. When an update exists its exact shape is
+    not observable on a box with no pending update, so accept a bare string or a
+    dict carrying a ``version``/``name`` field; anything else yields None.
+    """
+    if not new:
+        return None
+    if isinstance(new, str):
+        return new
+    if isinstance(new, dict):
+        return new.get("version") or new.get("name")
+    return None
+
+
+class UpdateCoordinator(TrueNASBaseCoordinator[UpdateData]):
+    """OS update availability: installed from system.info, latest from update.status."""
+
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
+        """Initialize the slow update coordinator."""
+        super().__init__(
+            hass, client, "TrueNAS Update", interval or SCAN_INTERVAL_UPDATE
+        )
+
+    def _fetch(self) -> UpdateData:
+        """Read the installed version and the available-update status."""
+        info = self.client.call("system.info")
+        status = self.client.call("update.status")
+        installed = info.get("version")
+        new = (status.get("status") or {}).get("new_version")
+        latest = _extract_new_version(new) or installed
+        return UpdateData(
+            installed_version=installed, latest_version=latest, raw_status=status
         )

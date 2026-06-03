@@ -83,6 +83,36 @@ async def test_unload_entry(
     client.close.assert_called_once()
 
 
+async def test_runtime_data_has_update_and_toggles(hass, init_integration) -> None:
+    """Runtime data carries the UpdateCoordinator and group-toggle booleans."""
+    from custom_components.truenas_ng.coordinator import UpdateCoordinator
+
+    data = init_integration.runtime_data
+    assert isinstance(data.update, UpdateCoordinator)
+    assert data.update.data.installed_version == "26.0.0-BETA.1"
+
+    # init_integration enables all groups via options.
+    assert data.enable_datasets is True
+    assert data.enable_disks is True
+    assert data.enable_reporting is True
+    assert data.enable_service_controls is True
+
+
+async def test_options_update_reloads_entry(hass, init_integration) -> None:
+    """Updating options triggers a reload via the update listener."""
+    from custom_components.truenas_ng.const import CONF_ENABLE_DATASETS
+
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_reload"
+    ) as mock_reload:
+        hass.config_entries.async_update_entry(
+            init_integration, options={CONF_ENABLE_DATASETS: True}
+        )
+        await hass.async_block_till_done()
+
+    mock_reload.assert_called_once_with(init_integration.entry_id)
+
+
 async def test_setup_entry_connection_error_retries(
     hass: HomeAssistant, mock_client: MagicMock
 ) -> None:

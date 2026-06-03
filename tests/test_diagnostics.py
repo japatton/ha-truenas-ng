@@ -1,7 +1,6 @@
 """Tests for truenas_ng config-entry diagnostics redaction and content."""
 from __future__ import annotations
 
-import pytest
 from homeassistant.components.diagnostics import REDACTED
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
