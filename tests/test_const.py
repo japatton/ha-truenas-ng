@@ -32,3 +32,31 @@ def test_platforms() -> None:
         Platform.BINARY_SENSOR,
         Platform.BUTTON,
     ]
+
+
+def test_v02_option_keys_and_defaults() -> None:
+    """v0.2 adds the update interval, option keys, and group defaults."""
+    from custom_components.truenas_ng import const
+
+    assert const.SCAN_INTERVAL_UPDATE == 21600
+    assert const.MIN_SCAN_INTERVAL == 5
+
+    # Option keys exist and are distinct strings.
+    keys = {
+        const.CONF_INTERVAL_STORAGE,
+        const.CONF_INTERVAL_DATASETS,
+        const.CONF_INTERVAL_SYSTEM,
+        const.CONF_INTERVAL_REPORTING,
+        const.CONF_INTERVAL_UPDATE,
+        const.CONF_ENABLE_DATASETS,
+        const.CONF_ENABLE_DISKS,
+        const.CONF_ENABLE_REPORTING,
+        const.CONF_ENABLE_SERVICE_CONTROLS,
+    }
+    assert len(keys) == 9
+
+    # Group defaults: datasets off, everything else on.
+    assert const.DEFAULT_ENABLE_DATASETS is False
+    assert const.DEFAULT_ENABLE_DISKS is True
+    assert const.DEFAULT_ENABLE_REPORTING is True
+    assert const.DEFAULT_ENABLE_SERVICE_CONTROLS is True
