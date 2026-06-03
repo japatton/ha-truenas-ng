@@ -45,6 +45,7 @@ from .coordinator import (
     UpdateCoordinator,
 )
 from .repairs import async_setup_alert_issues
+from .services import async_register_services, async_unregister_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,6 +147,7 @@ async def async_setup_entry(
 
     async_setup_alert_issues(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    async_register_services(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -164,4 +166,5 @@ async def async_unload_entry(
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         await hass.async_add_executor_job(entry.runtime_data.client.close)
+        async_unregister_services(hass)
     return unload_ok

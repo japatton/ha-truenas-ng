@@ -1,0 +1,22 @@
+dismiss_alert:
+  fields:
+    uuid:
+      required: true
+      example: "11111111-2222-3333-4444-555555555555"
+      selector:
+        text:
+    entry_id:
+      required: false
+      selector:
+        text:
+restore_alert:
+  fields:
+    uuid:
+      required: true
+      example: "11111111-2222-3333-4444-555555555555"
+      selector:
+        text:
+    entry_id:
+      required: false
+      selector:
+        text:

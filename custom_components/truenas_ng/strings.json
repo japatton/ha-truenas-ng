@@ -56,6 +56,36 @@
       }
     }
   },
+  "services": {
+    "dismiss_alert": {
+      "name": "Dismiss alert",
+      "description": "Dismiss a TrueNAS alert by its UUID.",
+      "fields": {
+        "uuid": {
+          "name": "Alert UUID",
+          "description": "The UUID of the alert to dismiss."
+        },
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Target a specific TrueNAS config entry (only needed when more than one is configured)."
+        }
+      }
+    },
+    "restore_alert": {
+      "name": "Restore alert",
+      "description": "Un-dismiss (restore) a previously dismissed TrueNAS alert by its UUID.",
+      "fields": {
+        "uuid": {
+          "name": "Alert UUID",
+          "description": "The UUID of the alert to restore."
+        },
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Target a specific TrueNAS config entry (only needed when more than one is configured)."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "version": {
