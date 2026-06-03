@@ -188,6 +188,11 @@
       "shutdown": {
         "name": "Shut down"
       }
+    },
+    "switch": {
+      "service_control": {
+        "name": "{service}"
+      }
     }
   }
 }

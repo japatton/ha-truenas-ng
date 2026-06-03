@@ -37,4 +37,9 @@ DEFAULT_ENABLE_DISKS = True
 DEFAULT_ENABLE_REPORTING = True
 DEFAULT_ENABLE_SERVICE_CONTROLS = True
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON]
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.SWITCH,
+]
