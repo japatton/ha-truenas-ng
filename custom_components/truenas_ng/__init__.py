@@ -16,12 +16,33 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from .client import TrueNASAuthError, TrueNASClient, TrueNASError
-from .const import PLATFORMS
+from .const import (
+    CONF_ENABLE_DATASETS,
+    CONF_ENABLE_DISKS,
+    CONF_ENABLE_REPORTING,
+    CONF_ENABLE_SERVICE_CONTROLS,
+    CONF_INTERVAL_DATASETS,
+    CONF_INTERVAL_REPORTING,
+    CONF_INTERVAL_STORAGE,
+    CONF_INTERVAL_SYSTEM,
+    CONF_INTERVAL_UPDATE,
+    DEFAULT_ENABLE_DATASETS,
+    DEFAULT_ENABLE_DISKS,
+    DEFAULT_ENABLE_REPORTING,
+    DEFAULT_ENABLE_SERVICE_CONTROLS,
+    PLATFORMS,
+    SCAN_INTERVAL_DATASETS,
+    SCAN_INTERVAL_REPORTING,
+    SCAN_INTERVAL_STORAGE,
+    SCAN_INTERVAL_SYSTEM,
+    SCAN_INTERVAL_UPDATE,
+)
 from .coordinator import (
     DatasetCoordinator,
     ReportingCoordinator,
     StorageCoordinator,
     SystemCoordinator,
+    UpdateCoordinator,
 )
 from .repairs import async_setup_alert_issues
 
@@ -39,6 +60,11 @@ class TrueNASRuntimeData:
     datasets: DatasetCoordinator
     system: SystemCoordinator
     reporting: ReportingCoordinator
+    update: UpdateCoordinator
+    enable_datasets: bool
+    enable_disks: bool
+    enable_reporting: bool
+    enable_service_controls: bool
 
 
 type TrueNASConfigEntry = ConfigEntry[TrueNASRuntimeData]
@@ -77,16 +103,29 @@ async def async_setup_entry(
         raise ConfigEntryNotReady(str(err)) from err
 
     physmem = info["physmem"]
+    opts = entry.options
 
-    storage = StorageCoordinator(hass, client)
-    datasets = DatasetCoordinator(hass, client)
-    system = SystemCoordinator(hass, client)
-    reporting = ReportingCoordinator(hass, client, physmem)
+    storage = StorageCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_STORAGE, SCAN_INTERVAL_STORAGE)
+    )
+    datasets = DatasetCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_DATASETS, SCAN_INTERVAL_DATASETS)
+    )
+    system = SystemCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_SYSTEM, SCAN_INTERVAL_SYSTEM)
+    )
+    reporting = ReportingCoordinator(
+        hass, client, physmem, opts.get(CONF_INTERVAL_REPORTING, SCAN_INTERVAL_REPORTING)
+    )
+    update = UpdateCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_UPDATE, SCAN_INTERVAL_UPDATE)
+    )
 
     await storage.async_config_entry_first_refresh()
     await datasets.async_config_entry_first_refresh()
     await system.async_config_entry_first_refresh()
     await reporting.async_config_entry_first_refresh()
+    await update.async_config_entry_first_refresh()
 
     entry.runtime_data = TrueNASRuntimeData(
         client=client,
@@ -96,11 +135,26 @@ async def async_setup_entry(
         datasets=datasets,
         system=system,
         reporting=reporting,
+        update=update,
+        enable_datasets=opts.get(CONF_ENABLE_DATASETS, DEFAULT_ENABLE_DATASETS),
+        enable_disks=opts.get(CONF_ENABLE_DISKS, DEFAULT_ENABLE_DISKS),
+        enable_reporting=opts.get(CONF_ENABLE_REPORTING, DEFAULT_ENABLE_REPORTING),
+        enable_service_controls=opts.get(
+            CONF_ENABLE_SERVICE_CONTROLS, DEFAULT_ENABLE_SERVICE_CONTROLS
+        ),
     )
 
     async_setup_alert_issues(hass, entry)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+async def _async_update_listener(
+    hass: HomeAssistant, entry: TrueNASConfigEntry
+) -> None:
+    """Reload the entry when options change so new intervals/toggles take effect."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(
