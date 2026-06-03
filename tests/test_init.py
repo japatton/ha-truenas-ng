@@ -91,8 +91,8 @@ async def test_runtime_data_has_update_and_toggles(hass, init_integration) -> No
     assert isinstance(data.update, UpdateCoordinator)
     assert data.update.data.installed_version == "26.0.0-BETA.1"
 
-    # Defaults (init_integration sets no options): datasets off, the rest on.
-    assert data.enable_datasets is False
+    # init_integration enables all groups via options.
+    assert data.enable_datasets is True
     assert data.enable_disks is True
     assert data.enable_reporting is True
     assert data.enable_service_controls is True

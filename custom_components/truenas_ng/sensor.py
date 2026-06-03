@@ -605,10 +605,13 @@ async def async_setup_entry(
 
     # Reporting sensors (attached to the hub device via system.info).
     info = data.system.data.info
-    for reporting_description in REPORTING_SENSORS:
-        entities.append(
-            TrueNASReportingSensor(data.reporting, host_id, info, reporting_description)
-        )
+    if data.enable_reporting:
+        for reporting_description in REPORTING_SENSORS:
+            entities.append(
+                TrueNASReportingSensor(
+                    data.reporting, host_id, info, reporting_description
+                )
+            )
 
     # Per-pool sensors.
     for guid in data.storage.data.pools:
@@ -618,35 +621,39 @@ async def async_setup_entry(
             )
 
     # Per-disk sensors (keyed by stable_id: serial → identifier → name).
-    for stable_id in data.storage.data.disks:
-        for disk_description in DISK_SENSORS:
-            entities.append(
-                TrueNASDiskSensor(data.storage, host_id, stable_id, disk_description)
-            )
+    if data.enable_disks:
+        for stable_id in data.storage.data.disks:
+            for disk_description in DISK_SENSORS:
+                entities.append(
+                    TrueNASDiskSensor(
+                        data.storage, host_id, stable_id, disk_description
+                    )
+                )
 
     # Per-dataset sensors (disabled by default).
     # F6: attach each to its REAL pool device when that pool is known; when the
     # pool name is not found among the actual pools, attach to the hub device
     # instead of synthesising a phantom "ZFS Pool" device entry.
-    pools_by_name = {
-        pool.get("name"): pool for pool in data.storage.data.pools.values()
-    }
-    system_info = data.system.data.info
-    for dataset_id, dataset in data.datasets.data.items():
-        real_pool = pools_by_name.get(dataset.get("pool"))
-        if real_pool is not None:
-            dataset_device_info: DeviceInfo = pool_device_info(host_id, real_pool)
-        else:
-            dataset_device_info = hub_device_info(host_id, system_info)
-        for dataset_description in DATASET_SENSORS:
-            entities.append(
-                TrueNASDatasetSensor(
-                    data.datasets,
-                    host_id,
-                    dataset_id,
-                    dataset_device_info,
-                    dataset_description,
+    if data.enable_datasets:
+        pools_by_name = {
+            pool.get("name"): pool for pool in data.storage.data.pools.values()
+        }
+        system_info = data.system.data.info
+        for dataset_id, dataset in data.datasets.data.items():
+            real_pool = pools_by_name.get(dataset.get("pool"))
+            if real_pool is not None:
+                dataset_device_info: DeviceInfo = pool_device_info(host_id, real_pool)
+            else:
+                dataset_device_info = hub_device_info(host_id, system_info)
+            for dataset_description in DATASET_SENSORS:
+                entities.append(
+                    TrueNASDatasetSensor(
+                        data.datasets,
+                        host_id,
+                        dataset_id,
+                        dataset_device_info,
+                        dataset_description,
+                    )
                 )
-            )
 
     async_add_entities(entities)

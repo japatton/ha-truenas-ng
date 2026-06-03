@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
@@ -15,7 +15,7 @@ from homeassistant.const import (
     CONF_USERNAME,
     CONF_VERIFY_SSL,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 
 from .client import (
     TrueNASAuthError,
@@ -24,10 +24,29 @@ from .client import (
     TrueNASError,
 )
 from .const import (
+    CONF_ENABLE_DATASETS,
+    CONF_ENABLE_DISKS,
+    CONF_ENABLE_REPORTING,
+    CONF_ENABLE_SERVICE_CONTROLS,
+    CONF_INTERVAL_DATASETS,
+    CONF_INTERVAL_REPORTING,
+    CONF_INTERVAL_STORAGE,
+    CONF_INTERVAL_SYSTEM,
+    CONF_INTERVAL_UPDATE,
+    DEFAULT_ENABLE_DATASETS,
+    DEFAULT_ENABLE_DISKS,
+    DEFAULT_ENABLE_REPORTING,
+    DEFAULT_ENABLE_SERVICE_CONTROLS,
     DEFAULT_PORT,
     DEFAULT_USERNAME,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
+    MIN_SCAN_INTERVAL,
+    SCAN_INTERVAL_DATASETS,
+    SCAN_INTERVAL_REPORTING,
+    SCAN_INTERVAL_STORAGE,
+    SCAN_INTERVAL_SYSTEM,
+    SCAN_INTERVAL_UPDATE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,6 +101,12 @@ class TrueNASConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for TrueNAS (Native)."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry) -> "TrueNASOptionsFlow":
+        """Return the options flow handler."""
+        return TrueNASOptionsFlow()
 
     async def _async_probe(
         self, data: Mapping[str, Any], errors: dict[str, str]
@@ -173,3 +198,64 @@ class TrueNASConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=_user_schema(user_input or reconfigure_entry.data),
             errors=errors,
         )
+
+
+def _interval(value: int) -> int:
+    """Validate a poll interval (seconds)."""
+    return vol.All(vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL))(value)
+
+
+class TrueNASOptionsFlow(OptionsFlow):
+    """Tune poll intervals and which entity groups are created."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show/process the single options form."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        opts = self.config_entry.options
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_INTERVAL_STORAGE,
+                    default=opts.get(CONF_INTERVAL_STORAGE, SCAN_INTERVAL_STORAGE),
+                ): _interval,
+                vol.Required(
+                    CONF_INTERVAL_DATASETS,
+                    default=opts.get(CONF_INTERVAL_DATASETS, SCAN_INTERVAL_DATASETS),
+                ): _interval,
+                vol.Required(
+                    CONF_INTERVAL_SYSTEM,
+                    default=opts.get(CONF_INTERVAL_SYSTEM, SCAN_INTERVAL_SYSTEM),
+                ): _interval,
+                vol.Required(
+                    CONF_INTERVAL_REPORTING,
+                    default=opts.get(CONF_INTERVAL_REPORTING, SCAN_INTERVAL_REPORTING),
+                ): _interval,
+                vol.Required(
+                    CONF_INTERVAL_UPDATE,
+                    default=opts.get(CONF_INTERVAL_UPDATE, SCAN_INTERVAL_UPDATE),
+                ): _interval,
+                vol.Required(
+                    CONF_ENABLE_DATASETS,
+                    default=opts.get(CONF_ENABLE_DATASETS, DEFAULT_ENABLE_DATASETS),
+                ): bool,
+                vol.Required(
+                    CONF_ENABLE_DISKS,
+                    default=opts.get(CONF_ENABLE_DISKS, DEFAULT_ENABLE_DISKS),
+                ): bool,
+                vol.Required(
+                    CONF_ENABLE_REPORTING,
+                    default=opts.get(CONF_ENABLE_REPORTING, DEFAULT_ENABLE_REPORTING),
+                ): bool,
+                vol.Required(
+                    CONF_ENABLE_SERVICE_CONTROLS,
+                    default=opts.get(
+                        CONF_ENABLE_SERVICE_CONTROLS, DEFAULT_ENABLE_SERVICE_CONTROLS
+                    ),
+                ): bool,
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)

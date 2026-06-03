@@ -22,7 +22,13 @@ from pytest_homeassistant_custom_component.common import (
     load_json_object_fixture,
 )
 
-from custom_components.truenas_ng.const import DOMAIN
+from custom_components.truenas_ng.const import (
+    CONF_ENABLE_DATASETS,
+    CONF_ENABLE_DISKS,
+    CONF_ENABLE_REPORTING,
+    CONF_ENABLE_SERVICE_CONTROLS,
+    DOMAIN,
+)
 
 HOST_ID = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
@@ -100,6 +106,12 @@ async def init_integration(
             CONF_USERNAME: "homeassistant",
             CONF_API_KEY: "1-test",
             CONF_VERIFY_SSL: True,
+        },
+        options={
+            CONF_ENABLE_DATASETS: True,
+            CONF_ENABLE_DISKS: True,
+            CONF_ENABLE_REPORTING: True,
+            CONF_ENABLE_SERVICE_CONTROLS: True,
         },
     )
     entry.add_to_hass(hass)

@@ -43,6 +43,25 @@
       "wrong_host": "The credentials are for a different TrueNAS system."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TrueNAS options",
+        "description": "Poll intervals (seconds) and which entity groups to create. Changes reload the integration.",
+        "data": {
+          "interval_storage": "Storage interval",
+          "interval_datasets": "Datasets interval",
+          "interval_system": "System interval",
+          "interval_reporting": "Reporting interval",
+          "interval_update": "Update-check interval",
+          "enable_datasets": "Create dataset entities",
+          "enable_disks": "Create disk entities",
+          "enable_reporting": "Create reporting (CPU/memory) entities",
+          "enable_service_controls": "Create service switches and restart buttons"
+        }
+      }
+    }
+  },
   "issues": {
     "truenas_alert": {
       "title": "TrueNAS alert: {klass}",

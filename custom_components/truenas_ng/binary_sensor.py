@@ -35,8 +35,11 @@ async def async_setup_entry(
     for guid in storage.data.pools:
         entities.append(TrueNASPoolHealthBinarySensor(storage, host_id, guid))
 
-    for stable_id in storage.data.disks:
-        entities.append(TrueNASDiskProblemBinarySensor(storage, host_id, stable_id))
+    if data.enable_disks:
+        for stable_id in storage.data.disks:
+            entities.append(
+                TrueNASDiskProblemBinarySensor(storage, host_id, stable_id)
+            )
 
     for name in system.data.services:
         entities.append(TrueNASServiceRunningBinarySensor(system, host_id, name))
