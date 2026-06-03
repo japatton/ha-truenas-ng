@@ -187,6 +187,9 @@
       },
       "shutdown": {
         "name": "Shut down"
+      },
+      "service_restart": {
+        "name": "{service} restart"
       }
     },
     "switch": {
