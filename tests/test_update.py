@@ -95,3 +95,59 @@ async def test_update_install_calls_update_run(
 
     run = [c for c in mock_client.call.call_args_list if c.args[0] == "update.run"]
     assert run and run[0].kwargs == {"job": True}
+
+
+async def test_update_install_swallows_reboot_drop(
+    hass: HomeAssistant, mock_client
+) -> None:
+    """A dropped connection from update.run (the reboot) is treated as success."""
+    from custom_components.truenas_ng.client import TrueNASConnectionError
+
+    mock_client._dispatch["update.status"] = _AVAILABLE_STATUS
+    await _setup(hass, mock_client)
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("update", DOMAIN, f"{HOST_ID}_os_update")
+
+    base = mock_client.call.side_effect
+
+    def _raise(method, *args, **kwargs):
+        if method == "update.run":
+            raise TrueNASConnectionError("socket closed by reboot")
+        return base(method, *args, **kwargs)
+
+    mock_client.call.side_effect = _raise
+
+    # Must NOT raise — the reboot-drop is the expected outcome of update.run.
+    await hass.services.async_call(
+        "update", "install", {"entity_id": entity_id}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+
+async def test_update_install_surfaces_real_error(
+    hass: HomeAssistant, mock_client
+) -> None:
+    """A non-transport failure from update.run surfaces as HomeAssistantError."""
+    import pytest
+    from homeassistant.exceptions import HomeAssistantError
+
+    from custom_components.truenas_ng.client import TrueNASError
+
+    mock_client._dispatch["update.status"] = _AVAILABLE_STATUS
+    await _setup(hass, mock_client)
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("update", DOMAIN, f"{HOST_ID}_os_update")
+
+    base = mock_client.call.side_effect
+
+    def _raise(method, *args, **kwargs):
+        if method == "update.run":
+            raise TrueNASError("update failed server-side")
+        return base(method, *args, **kwargs)
+
+    mock_client.call.side_effect = _raise
+
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "update", "install", {"entity_id": entity_id}, blocking=True
+        )

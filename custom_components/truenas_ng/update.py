@@ -7,10 +7,11 @@ from typing import Any
 
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TrueNASConfigEntry
-from .client import TrueNASClient, TrueNASError
+from .client import TrueNASClient, TrueNASConnectionError, TrueNASError
 from .coordinator import UpdateCoordinator
 from .entity import TrueNASEntity, hub_device_info
 
@@ -70,10 +71,13 @@ class TrueNASUpdateEntity(TrueNASEntity[UpdateCoordinator], UpdateEntity):
             await self.hass.async_add_executor_job(
                 partial(self._client.call, "update.run", job=True)
             )
-        except TrueNASError as err:
+        except TrueNASConnectionError as err:
             # update.run downloads, creates a boot environment, then reboots,
-            # which tears down the WebSocket mid-job. Treat that as the update
-            # being underway rather than a failure.
+            # which tears down the WebSocket mid-job. The dropped connection is
+            # the expected outcome, so treat it as the update being underway.
             _LOGGER.warning(
                 "TrueNAS update started; the system is likely rebooting (%s)", err
             )
+        except TrueNASError as err:
+            # A non-transport failure (e.g. auth rejected) is a real error.
+            raise HomeAssistantError(f"TrueNAS update failed: {err}") from err
