@@ -55,6 +55,10 @@ def _build_dispatch() -> dict[str, object]:
         "system.reboot": None,
         "system.shutdown": None,
         "alert.dismiss": None,
+        "alert.restore": None,
+        "service.control": None,
+        "update.status": load_json_object_fixture("update_status.json"),
+        "update.run": None,
     }
 
 
@@ -62,18 +66,19 @@ def _build_dispatch() -> dict[str, object]:
 def mock_client() -> MagicMock:
     """A synchronous MagicMock standing in for TrueNASClient.
 
-    `.call` dispatches by method name to the loaded C7 fixtures; unknown
-    methods raise AssertionError. `.connect`/`.close` are no-ops; `.ping`
-    returns True. This is a plain MagicMock (NOT AsyncMock): the real client
-    runs on the executor thread.
+    `.call` dispatches by method name to the loaded C7 fixtures (via the
+    mutable `._dispatch` dict, so a test can override one method's payload
+    before setup); unknown methods raise AssertionError. `.connect`/`.close`
+    are no-ops; `.ping` returns True. Plain MagicMock (NOT AsyncMock): the
+    real client runs on the executor thread.
     """
-    dispatch = _build_dispatch()
+    client = MagicMock()
+    client._dispatch = _build_dispatch()
 
     def _call(method: str, *params: object, **kwargs: object) -> object:
-        assert method in dispatch, f"unexpected RPC method: {method}"
-        return dispatch[method]
+        assert method in client._dispatch, f"unexpected RPC method: {method}"
+        return client._dispatch[method]
 
-    client = MagicMock()
     client.call.side_effect = _call
     client.connect.return_value = None
     client.close.return_value = None

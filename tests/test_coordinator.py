@@ -235,3 +235,36 @@ async def test_storage_disk_without_serial(
     assert "sdc" in data.disks
     # All three disks present
     assert len(data.disks) == 3
+
+
+async def test_update_coordinator_up_to_date(hass, mock_client) -> None:
+    """UpdateCoordinator reports installed==latest when status.new_version is null."""
+    from custom_components.truenas_ng.coordinator import UpdateCoordinator
+
+    coordinator = UpdateCoordinator(hass, mock_client)
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert coordinator.data.installed_version == "26.0.0-BETA.1"
+    assert coordinator.data.latest_version == "26.0.0-BETA.1"
+
+
+def test_extract_new_version_handles_shapes() -> None:
+    """_extract_new_version copes with null, str, and dict new_version nodes."""
+    from custom_components.truenas_ng.coordinator import _extract_new_version
+
+    assert _extract_new_version(None) is None
+    assert _extract_new_version("") is None
+    assert _extract_new_version("26.0.1") == "26.0.1"
+    assert _extract_new_version({"version": "26.0.1"}) == "26.0.1"
+    assert _extract_new_version({"name": "26.0.1-RC"}) == "26.0.1-RC"
+    assert _extract_new_version({"unexpected": True}) is None
+
+
+async def test_storage_coordinator_interval_override(hass, mock_client) -> None:
+    """An explicit interval overrides the const default."""
+    from datetime import timedelta
+
+    from custom_components.truenas_ng.coordinator import StorageCoordinator
+
+    coordinator = StorageCoordinator(hass, mock_client, 45)
+    assert coordinator.update_interval == timedelta(seconds=45)
