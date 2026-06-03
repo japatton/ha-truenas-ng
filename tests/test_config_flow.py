@@ -6,7 +6,6 @@ import json
 import pathlib
 from unittest.mock import MagicMock, patch
 
-import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import (
     CONF_API_KEY,

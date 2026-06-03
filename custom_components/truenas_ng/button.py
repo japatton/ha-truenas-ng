@@ -1,7 +1,6 @@
 """Button platform for the truenas_ng integration."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import partial
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription

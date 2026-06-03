@@ -1,5 +1,4 @@
 """Self-tests for the shared pytest harness (Shared Contract C6)."""
-import json
 
 import pytest
 from unittest.mock import MagicMock

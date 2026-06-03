@@ -1,7 +1,6 @@
 """Tests for the truenas_ng Repairs alert reconciliation and dismiss flow."""
 from __future__ import annotations
 
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
