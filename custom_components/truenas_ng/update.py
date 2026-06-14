@@ -12,8 +12,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TrueNASConfigEntry
 from .client import TrueNASClient, TrueNASConnectionError, TrueNASError
-from .coordinator import UpdateCoordinator
-from .entity import TrueNASEntity, hub_device_info
+from .coordinator import AppsCoordinator, UpdateCoordinator
+from .entity import TrueNASEntity, app_device_info, hub_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,15 +23,19 @@ async def async_setup_entry(
     entry: TrueNASConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the TrueNAS OS update entity from a config entry."""
+    """Set up the OS update entity plus a per-app update entity."""
     data = entry.runtime_data
-    async_add_entities(
-        [
-            TrueNASUpdateEntity(
-                data.update, data.host_id, data.client, data.system.data.info
-            )
-        ]
-    )
+    entities: list[UpdateEntity] = [
+        TrueNASUpdateEntity(
+            data.update, data.host_id, data.client, data.system.data.info
+        )
+    ]
+    if data.enable_apps:
+        entities.extend(
+            TrueNASAppUpdateEntity(data.apps, data.host_id, data.client, name)
+            for name in data.apps.data
+        )
+    async_add_entities(entities)
 
 
 class TrueNASUpdateEntity(TrueNASEntity[UpdateCoordinator], UpdateEntity):
@@ -81,3 +85,58 @@ class TrueNASUpdateEntity(TrueNASEntity[UpdateCoordinator], UpdateEntity):
         except TrueNASError as err:
             # A non-transport failure (e.g. auth rejected) is a real error.
             raise HomeAssistantError(f"TrueNAS update failed: {err}") from err
+
+
+class TrueNASAppUpdateEntity(TrueNASEntity[AppsCoordinator], UpdateEntity):
+    """Per-app update: surfaces upgrade_available and installs via app.upgrade."""
+
+    _attr_translation_key = "app_update"
+    _attr_supported_features = UpdateEntityFeature.INSTALL
+
+    def __init__(
+        self,
+        coordinator: AppsCoordinator,
+        host_id: str,
+        client: TrueNASClient,
+        name: str,
+    ) -> None:
+        """Initialize the update entity for one app."""
+        super().__init__(coordinator, host_id)
+        self._client = client
+        self._app = name
+        self._attr_unique_id = f"{host_id}_app_{name}_update"
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+
+    @property
+    def available(self) -> bool:
+        """Unavailable when the app leaves coordinator data."""
+        return super().available and self._app in self.coordinator.data
+
+    @property
+    def installed_version(self) -> str | None:
+        """The app's installed chart version."""
+        app = self.coordinator.data.get(self._app) or {}
+        return app.get("version")
+
+    @property
+    def latest_version(self) -> str | None:
+        """The latest version when an upgrade is available, else installed."""
+        app = self.coordinator.data.get(self._app) or {}
+        installed = app.get("version")
+        if app.get("upgrade_available"):
+            return app.get("latest_version") or installed
+        return installed
+
+    async def async_install(
+        self, version: str | None, backup: bool, **kwargs: Any
+    ) -> None:
+        """Upgrade the app to its latest version."""
+        try:
+            await self.hass.async_add_executor_job(
+                partial(self._client.call, "app.upgrade", self._app, job=True)
+            )
+        except TrueNASError as err:
+            raise HomeAssistantError(
+                f"Failed to upgrade TrueNAS app {self._app}: {err}"
+            ) from err
+        await self.coordinator.async_request_refresh()

@@ -151,3 +151,30 @@ async def test_update_install_surfaces_real_error(
         await hass.services.async_call(
             "update", "install", {"entity_id": entity_id}, blocking=True
         )
+
+
+async def test_app_update_entities(hass: HomeAssistant, init_integration) -> None:
+    """radarr (upgrade_available) reports 'on'; jellyfin reports 'off'."""
+    registry = er.async_get(hass)
+    radarr = registry.async_get_entity_id("update", DOMAIN, f"{HOST_ID}_app_radarr_update")
+    jellyfin = registry.async_get_entity_id("update", DOMAIN, f"{HOST_ID}_app_jellyfin_update")
+    assert radarr is not None and jellyfin is not None
+    rstate = hass.states.get(radarr)
+    assert rstate.state == "on"
+    assert rstate.attributes["installed_version"] == "1.0.0"
+    assert rstate.attributes["latest_version"] == "1.1.0"
+    assert hass.states.get(jellyfin).state == "off"
+
+
+async def test_app_update_install_calls_app_upgrade(
+    hass: HomeAssistant, init_integration, mock_client
+) -> None:
+    """Installing an app update calls app.upgrade(name) with job=True."""
+    registry = er.async_get(hass)
+    radarr = registry.async_get_entity_id("update", DOMAIN, f"{HOST_ID}_app_radarr_update")
+    mock_client.call.reset_mock()
+    await hass.services.async_call("update", "install", {"entity_id": radarr}, blocking=True)
+    await hass.async_block_till_done()
+    call = [c for c in mock_client.call.call_args_list if c.args[0] == "app.upgrade"]
+    assert call[0].args == ("app.upgrade", "radarr")
+    assert call[0].kwargs == {"job": True}

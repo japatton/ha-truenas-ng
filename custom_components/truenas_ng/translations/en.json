@@ -255,6 +255,9 @@
     "update": {
       "os_update": {
         "name": "Update"
+      },
+      "app_update": {
+        "name": "Update"
       }
     }
   }
