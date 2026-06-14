@@ -15,11 +15,13 @@ from homeassistant.helpers.update_coordinator import (
 
 from .client import TrueNASAuthError, TrueNASClient, TrueNASError
 from .const import (
+    SCAN_INTERVAL_APPS,
     SCAN_INTERVAL_DATASETS,
     SCAN_INTERVAL_REPORTING,
     SCAN_INTERVAL_STORAGE,
     SCAN_INTERVAL_SYSTEM,
     SCAN_INTERVAL_UPDATE,
+    SCAN_INTERVAL_VMS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -322,3 +324,41 @@ class UpdateCoordinator(TrueNASBaseCoordinator[UpdateData]):
         return UpdateData(
             installed_version=installed, latest_version=latest, raw_status=status
         )
+
+
+class AppsCoordinator(TrueNASBaseCoordinator[dict[str, dict]]):
+    """TrueNAS apps keyed by name. Degrades to empty when apps are unavailable."""
+
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
+        """Initialize the apps coordinator."""
+        super().__init__(hass, client, "TrueNAS Apps", interval or SCAN_INTERVAL_APPS)
+
+    def _fetch(self) -> dict[str, dict]:
+        """Query apps; return empty (logged) if the apps subsystem errors."""
+        try:
+            raw = self.client.call("app.query")
+        except TrueNASError as err:
+            _LOGGER.warning("TrueNAS app.query failed; no app entities (%s)", err)
+            return {}
+        return {app["name"]: app for app in raw}
+
+
+class VMsCoordinator(TrueNASBaseCoordinator[dict[int, dict]]):
+    """TrueNAS VMs keyed by integer id. Degrades to empty when virt is unavailable."""
+
+    def __init__(
+        self, hass: HomeAssistant, client: TrueNASClient, interval: int | None = None
+    ) -> None:
+        """Initialize the VMs coordinator."""
+        super().__init__(hass, client, "TrueNAS VMs", interval or SCAN_INTERVAL_VMS)
+
+    def _fetch(self) -> dict[int, dict]:
+        """Query VMs; return empty (logged) if the virt subsystem errors."""
+        try:
+            raw = self.client.call("vm.query")
+        except TrueNASError as err:
+            _LOGGER.warning("TrueNAS vm.query failed; no VM entities (%s)", err)
+            return {}
+        return {vm["id"]: vm for vm in raw}

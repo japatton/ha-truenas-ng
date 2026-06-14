@@ -65,3 +65,27 @@ def disk_device_info(host_id: str, disk: dict, stable_id: str | None = None) -> 
         model=disk.get("model"),
         via_device=(DOMAIN, host_id),
     )
+
+
+def app_device_info(host_id: str, app: dict) -> DeviceInfo:
+    """Build the DeviceInfo for a TrueNAS app device, linked under the hub."""
+    name = app.get("name", "")
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{host_id}_app_{name}")},
+        name=f"App {name}",
+        manufacturer=MANUFACTURER,
+        model="TrueNAS App",
+        sw_version=app.get("human_version"),
+        via_device=(DOMAIN, host_id),
+    )
+
+
+def vm_device_info(host_id: str, vm: dict) -> DeviceInfo:
+    """Build the DeviceInfo for a TrueNAS VM device, linked under the hub."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{host_id}_vm_{vm.get('id')}")},
+        name=f"VM {vm.get('name', '')}",
+        manufacturer=MANUFACTURER,
+        model="TrueNAS VM",
+        via_device=(DOMAIN, host_id),
+    )
