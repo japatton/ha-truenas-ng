@@ -57,7 +57,11 @@
           "enable_datasets": "Create dataset entities",
           "enable_disks": "Create disk entities",
           "enable_reporting": "Create reporting (CPU/memory) entities",
-          "enable_service_controls": "Create service switches and restart buttons"
+          "enable_service_controls": "Create service switches and restart buttons",
+          "interval_apps": "Apps interval",
+          "interval_vms": "VMs interval",
+          "enable_apps": "Create app entities",
+          "enable_vms": "Create VM entities"
         }
       }
     }

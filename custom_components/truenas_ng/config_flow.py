@@ -24,29 +24,37 @@ from .client import (
     TrueNASError,
 )
 from .const import (
+    CONF_ENABLE_APPS,
     CONF_ENABLE_DATASETS,
     CONF_ENABLE_DISKS,
     CONF_ENABLE_REPORTING,
     CONF_ENABLE_SERVICE_CONTROLS,
+    CONF_ENABLE_VMS,
+    CONF_INTERVAL_APPS,
     CONF_INTERVAL_DATASETS,
     CONF_INTERVAL_REPORTING,
     CONF_INTERVAL_STORAGE,
     CONF_INTERVAL_SYSTEM,
     CONF_INTERVAL_UPDATE,
+    CONF_INTERVAL_VMS,
+    DEFAULT_ENABLE_APPS,
     DEFAULT_ENABLE_DATASETS,
     DEFAULT_ENABLE_DISKS,
     DEFAULT_ENABLE_REPORTING,
     DEFAULT_ENABLE_SERVICE_CONTROLS,
+    DEFAULT_ENABLE_VMS,
     DEFAULT_PORT,
     DEFAULT_USERNAME,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     MIN_SCAN_INTERVAL,
+    SCAN_INTERVAL_APPS,
     SCAN_INTERVAL_DATASETS,
     SCAN_INTERVAL_REPORTING,
     SCAN_INTERVAL_STORAGE,
     SCAN_INTERVAL_SYSTEM,
     SCAN_INTERVAL_UPDATE,
+    SCAN_INTERVAL_VMS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -239,6 +247,14 @@ class TrueNASOptionsFlow(OptionsFlow):
                     default=opts.get(CONF_INTERVAL_UPDATE, SCAN_INTERVAL_UPDATE),
                 ): _interval,
                 vol.Required(
+                    CONF_INTERVAL_APPS,
+                    default=opts.get(CONF_INTERVAL_APPS, SCAN_INTERVAL_APPS),
+                ): _interval,
+                vol.Required(
+                    CONF_INTERVAL_VMS,
+                    default=opts.get(CONF_INTERVAL_VMS, SCAN_INTERVAL_VMS),
+                ): _interval,
+                vol.Required(
                     CONF_ENABLE_DATASETS,
                     default=opts.get(CONF_ENABLE_DATASETS, DEFAULT_ENABLE_DATASETS),
                 ): bool,
@@ -255,6 +271,14 @@ class TrueNASOptionsFlow(OptionsFlow):
                     default=opts.get(
                         CONF_ENABLE_SERVICE_CONTROLS, DEFAULT_ENABLE_SERVICE_CONTROLS
                     ),
+                ): bool,
+                vol.Required(
+                    CONF_ENABLE_APPS,
+                    default=opts.get(CONF_ENABLE_APPS, DEFAULT_ENABLE_APPS),
+                ): bool,
+                vol.Required(
+                    CONF_ENABLE_VMS,
+                    default=opts.get(CONF_ENABLE_VMS, DEFAULT_ENABLE_VMS),
                 ): bool,
             }
         )
