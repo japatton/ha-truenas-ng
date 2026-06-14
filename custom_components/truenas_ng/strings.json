@@ -211,6 +211,21 @@
       },
       "dataset_snapshots": {
         "name": "{dataset} snapshots"
+      },
+      "app_state": {
+        "name": "State"
+      },
+      "app_version": {
+        "name": "Version"
+      },
+      "vm_state": {
+        "name": "State"
+      },
+      "vm_memory": {
+        "name": "Memory"
+      },
+      "vm_vcpus": {
+        "name": "vCPUs"
       }
     },
     "binary_sensor": {

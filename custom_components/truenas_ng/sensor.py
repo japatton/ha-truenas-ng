@@ -25,16 +25,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import TrueNASConfigEntry
 from .client import epoch_ms_to_datetime, parsed, to_int
 from .coordinator import (
+    AppsCoordinator,
     DatasetCoordinator,
     ReportingCoordinator,
     StorageCoordinator,
     SystemCoordinator,
+    VMsCoordinator,
 )
 from .entity import (
     TrueNASEntity,
+    app_device_info,
     disk_device_info,
     hub_device_info,
     pool_device_info,
+    vm_device_info,
 )
 
 
@@ -586,6 +590,132 @@ class TrueNASDatasetSensor(TrueNASEntity[DatasetCoordinator], SensorEntity):
 
 
 # --------------------------------------------------------------------------- #
+# APP (AppsCoordinator.data) — diagnostics, disabled by default
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True, kw_only=True)
+class TrueNASAppSensorDescription(SensorEntityDescription):
+    """Describes a per-app diagnostic sensor."""
+
+    value_fn: Callable[[dict], Any]
+
+
+APP_SENSORS: tuple[TrueNASAppSensorDescription, ...] = (
+    TrueNASAppSensorDescription(
+        key="state",
+        translation_key="app_state",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda app: app.get("state"),
+    ),
+    TrueNASAppSensorDescription(
+        key="version",
+        translation_key="app_version",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda app: app.get("human_version"),
+    ),
+)
+
+
+class TrueNASAppSensor(TrueNASEntity[AppsCoordinator], SensorEntity):
+    """A per-app diagnostic sensor keyed by app name."""
+
+    entity_description: TrueNASAppSensorDescription
+
+    def __init__(
+        self,
+        coordinator: AppsCoordinator,
+        host_id: str,
+        name: str,
+        description: TrueNASAppSensorDescription,
+    ) -> None:
+        super().__init__(coordinator, host_id)
+        self.entity_description = description
+        self._app = name
+        self._attr_unique_id = f"{host_id}_app_{name}_{description.key}"
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._app in self.coordinator.data
+
+    @property
+    def native_value(self) -> Any:
+        return self.entity_description.value_fn(
+            self.coordinator.data.get(self._app, {})
+        )
+
+
+# --------------------------------------------------------------------------- #
+# VM (VMsCoordinator.data) — diagnostics, disabled by default
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True, kw_only=True)
+class TrueNASVMSensorDescription(SensorEntityDescription):
+    """Describes a per-VM diagnostic sensor."""
+
+    value_fn: Callable[[dict], Any]
+
+
+VM_SENSORS: tuple[TrueNASVMSensorDescription, ...] = (
+    TrueNASVMSensorDescription(
+        key="state",
+        translation_key="vm_state",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda vm: (vm.get("status") or {}).get("state"),
+    ),
+    TrueNASVMSensorDescription(
+        key="memory",
+        translation_key="vm_memory",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.MEGABYTES,
+        suggested_unit_of_measurement=UnitOfInformation.GIBIBYTES,
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda vm: to_int(vm.get("memory")),
+    ),
+    TrueNASVMSensorDescription(
+        key="vcpus",
+        translation_key="vm_vcpus",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda vm: to_int(vm.get("vcpus")),
+    ),
+)
+
+
+class TrueNASVMSensor(TrueNASEntity[VMsCoordinator], SensorEntity):
+    """A per-VM diagnostic sensor keyed by VM id."""
+
+    entity_description: TrueNASVMSensorDescription
+
+    def __init__(
+        self,
+        coordinator: VMsCoordinator,
+        host_id: str,
+        vm_id: int,
+        description: TrueNASVMSensorDescription,
+    ) -> None:
+        super().__init__(coordinator, host_id)
+        self.entity_description = description
+        self._vm_id = vm_id
+        self._attr_unique_id = f"{host_id}_vm_{vm_id}_{description.key}"
+        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id])
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._vm_id in self.coordinator.data
+
+    @property
+    def native_value(self) -> Any:
+        return self.entity_description.value_fn(
+            self.coordinator.data.get(self._vm_id, {})
+        )
+
+
+# --------------------------------------------------------------------------- #
 # Platform setup
 # --------------------------------------------------------------------------- #
 async def async_setup_entry(
@@ -654,6 +784,22 @@ async def async_setup_entry(
                         dataset_device_info,
                         dataset_description,
                     )
+                )
+
+    # Per-app diagnostic sensors (disabled by default).
+    if data.enable_apps:
+        for app_name in data.apps.data:
+            for app_description in APP_SENSORS:
+                entities.append(
+                    TrueNASAppSensor(data.apps, host_id, app_name, app_description)
+                )
+
+    # Per-VM diagnostic sensors (disabled by default).
+    if data.enable_vms:
+        for vm_id in data.vms.data:
+            for vm_description in VM_SENSORS:
+                entities.append(
+                    TrueNASVMSensor(data.vms, host_id, vm_id, vm_description)
                 )
 
     async_add_entities(entities)
