@@ -62,3 +62,20 @@ def test_v02_option_keys_and_defaults() -> None:
     assert const.DEFAULT_ENABLE_DISKS is True
     assert const.DEFAULT_ENABLE_REPORTING is True
     assert const.DEFAULT_ENABLE_SERVICE_CONTROLS is True
+
+
+def test_v03_apps_vms_constants() -> None:
+    """v0.3 adds apps/VMs intervals, option keys, and default-on toggles."""
+    from custom_components.truenas_ng import const
+
+    assert const.SCAN_INTERVAL_APPS == 60
+    assert const.SCAN_INTERVAL_VMS == 60
+    keys = {
+        const.CONF_INTERVAL_APPS,
+        const.CONF_INTERVAL_VMS,
+        const.CONF_ENABLE_APPS,
+        const.CONF_ENABLE_VMS,
+    }
+    assert len(keys) == 4
+    assert const.DEFAULT_ENABLE_APPS is True
+    assert const.DEFAULT_ENABLE_VMS is True
