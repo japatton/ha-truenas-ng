@@ -11,8 +11,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TrueNASConfigEntry
 from .client import TrueNASClient, TrueNASError
-from .coordinator import StorageCoordinator, SystemCoordinator
-from .entity import TrueNASEntity, hub_device_info, pool_device_info
+from .coordinator import AppsCoordinator, StorageCoordinator, SystemCoordinator, VMsCoordinator
+from .entity import TrueNASEntity, app_device_info, hub_device_info, pool_device_info, vm_device_info
 
 REBOOT_REASON = "Initiated from Home Assistant"
 
@@ -67,6 +67,17 @@ async def async_setup_entry(
         for name in data.system.data.services:
             entities.append(
                 TrueNASServiceRestartButton(data.system, host_id, client, name)
+            )
+
+    if data.enable_apps:
+        for name in data.apps.data:
+            entities.append(
+                TrueNASAppRedeployButton(data.apps, host_id, client, name)
+            )
+    if data.enable_vms:
+        for vm_id in data.vms.data:
+            entities.append(
+                TrueNASVMRestartButton(data.vms, host_id, client, vm_id)
             )
 
     async_add_entities(entities)
@@ -179,5 +190,81 @@ class TrueNASServiceRestartButton(TrueNASEntity[SystemCoordinator], ButtonEntity
         except TrueNASError as err:
             raise HomeAssistantError(
                 f"Failed to restart TrueNAS service {self._service}: {err}"
+            ) from err
+        await self.coordinator.async_request_refresh()
+
+
+class TrueNASAppRedeployButton(TrueNASEntity[AppsCoordinator], ButtonEntity):
+    """Redeploy a TrueNAS app via app.redeploy."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "app_redeploy"
+
+    def __init__(
+        self,
+        coordinator: AppsCoordinator,
+        host_id: str,
+        client: TrueNASClient,
+        name: str,
+    ) -> None:
+        """Initialize the redeploy button for one app."""
+        super().__init__(coordinator, host_id)
+        self._client = client
+        self._app = name
+        self._attr_unique_id = f"{host_id}_app_{name}_redeploy"
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+
+    @property
+    def available(self) -> bool:
+        """Unavailable when the app leaves coordinator data."""
+        return super().available and self._app in self.coordinator.data
+
+    async def async_press(self) -> None:
+        """Redeploy the app."""
+        try:
+            await self.hass.async_add_executor_job(
+                partial(self._client.call, "app.redeploy", self._app, job=True)
+            )
+        except TrueNASError as err:
+            raise HomeAssistantError(
+                f"Failed to redeploy TrueNAS app {self._app}: {err}"
+            ) from err
+        await self.coordinator.async_request_refresh()
+
+
+class TrueNASVMRestartButton(TrueNASEntity[VMsCoordinator], ButtonEntity):
+    """Restart a TrueNAS VM via vm.restart."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "vm_restart"
+
+    def __init__(
+        self,
+        coordinator: VMsCoordinator,
+        host_id: str,
+        client: TrueNASClient,
+        vm_id: int,
+    ) -> None:
+        """Initialize the restart button for one VM."""
+        super().__init__(coordinator, host_id)
+        self._client = client
+        self._vm_id = vm_id
+        self._attr_unique_id = f"{host_id}_vm_{vm_id}_restart"
+        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id])
+
+    @property
+    def available(self) -> bool:
+        """Unavailable when the VM leaves coordinator data."""
+        return super().available and self._vm_id in self.coordinator.data
+
+    async def async_press(self) -> None:
+        """Restart the VM."""
+        try:
+            await self.hass.async_add_executor_job(
+                partial(self._client.call, "vm.restart", self._vm_id, job=True)
+            )
+        except TrueNASError as err:
+            raise HomeAssistantError(
+                f"Failed to restart TrueNAS VM {self._vm_id}: {err}"
             ) from err
         await self.coordinator.async_request_refresh()

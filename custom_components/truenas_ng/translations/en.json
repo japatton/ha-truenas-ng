@@ -239,6 +239,12 @@
       },
       "service_restart": {
         "name": "{service} restart"
+      },
+      "app_redeploy": {
+        "name": "Redeploy"
+      },
+      "vm_restart": {
+        "name": "Restart"
       }
     },
     "switch": {
