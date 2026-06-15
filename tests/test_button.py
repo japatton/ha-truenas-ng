@@ -31,8 +31,8 @@ async def test_button_entities_created(hass: HomeAssistant, init_integration) ->
         for entry in registry.entities.values()
         if entry.domain == "button" and entry.platform == DOMAIN
     ]
-    # 2 scrub + reboot + shutdown + 3 service restart buttons.
-    assert len(button_entries) == 7
+    # 2 scrub + reboot + shutdown + 3 service restart + 3 app redeploy + 2 vm restart.
+    assert len(button_entries) == 12
 
     unique_ids = {entry.unique_id for entry in button_entries}
     assert f"{HOST_ID}_pool_1111111111111111111_scrub" in unique_ids
@@ -118,3 +118,27 @@ async def test_shutdown_button_press_calls_system_shutdown(
     args, kwargs = mock_client.call.call_args
     assert args == ("system.shutdown", "Initiated from Home Assistant")
     assert kwargs == {"job": True}
+
+
+async def test_app_redeploy_button(hass: HomeAssistant, init_integration, mock_client) -> None:
+    """Pressing an app redeploy button calls app.redeploy(name) with job=True."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("button", DOMAIN, f"{HOST_ID}_app_radarr_redeploy")
+    assert entity_id is not None
+    mock_client.call.reset_mock()
+    await _press(hass, entity_id)
+    call = [c for c in mock_client.call.call_args_list if c.args[0] == "app.redeploy"]
+    assert call[0].args == ("app.redeploy", "radarr")
+    assert call[0].kwargs == {"job": True}
+
+
+async def test_vm_restart_button(hass: HomeAssistant, init_integration, mock_client) -> None:
+    """Pressing a VM restart button calls vm.restart(id) with job=True."""
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("button", DOMAIN, f"{HOST_ID}_vm_1_restart")
+    assert entity_id is not None
+    mock_client.call.reset_mock()
+    await _press(hass, entity_id)
+    call = [c for c in mock_client.call.call_args_list if c.args[0] == "vm.restart"]
+    assert call[0].args == ("vm.restart", 1)
+    assert call[0].kwargs == {"job": True}

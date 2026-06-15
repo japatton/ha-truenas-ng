@@ -57,7 +57,11 @@
           "enable_datasets": "Create dataset entities",
           "enable_disks": "Create disk entities",
           "enable_reporting": "Create reporting (CPU/memory) entities",
-          "enable_service_controls": "Create service switches and restart buttons"
+          "enable_service_controls": "Create service switches and restart buttons",
+          "interval_apps": "Apps interval",
+          "interval_vms": "VMs interval",
+          "enable_apps": "Create app entities",
+          "enable_vms": "Create VM entities"
         }
       }
     }
@@ -211,6 +215,21 @@
       },
       "dataset_snapshots": {
         "name": "{dataset} snapshots"
+      },
+      "app_state": {
+        "name": "State"
+      },
+      "app_version": {
+        "name": "Version"
+      },
+      "vm_state": {
+        "name": "State"
+      },
+      "vm_memory": {
+        "name": "Memory"
+      },
+      "vm_vcpus": {
+        "name": "vCPUs"
       }
     },
     "binary_sensor": {
@@ -239,6 +258,12 @@
       },
       "service_restart": {
         "name": "{service} restart"
+      },
+      "app_redeploy": {
+        "name": "Redeploy"
+      },
+      "vm_restart": {
+        "name": "Restart"
       }
     },
     "switch": {
@@ -248,6 +273,9 @@
     },
     "update": {
       "os_update": {
+        "name": "Update"
+      },
+      "app_update": {
         "name": "Update"
       }
     }

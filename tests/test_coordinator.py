@@ -268,3 +268,42 @@ async def test_storage_coordinator_interval_override(hass, mock_client) -> None:
 
     coordinator = StorageCoordinator(hass, mock_client, 45)
     assert coordinator.update_interval == timedelta(seconds=45)
+
+
+async def test_apps_coordinator_parses(hass, mock_client) -> None:
+    """AppsCoordinator keys apps by name."""
+    from custom_components.truenas_ng.coordinator import AppsCoordinator
+
+    coordinator = AppsCoordinator(hass, mock_client)
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert set(coordinator.data) == {"radarr", "jellyfin", "sabnzbd"}
+    assert coordinator.data["radarr"]["upgrade_available"] is True
+
+
+async def test_vms_coordinator_parses(hass, mock_client) -> None:
+    """VMsCoordinator keys VMs by integer id."""
+    from custom_components.truenas_ng.coordinator import VMsCoordinator
+
+    coordinator = VMsCoordinator(hass, mock_client)
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert set(coordinator.data) == {1, 2}
+    assert coordinator.data[1]["status"]["state"] == "RUNNING"
+
+
+async def test_apps_coordinator_graceful_on_error(hass, mock_client) -> None:
+    """A failing app.query yields empty data, not a coordinator failure."""
+    from custom_components.truenas_ng.client import TrueNASError
+    from custom_components.truenas_ng.coordinator import AppsCoordinator
+
+    def _boom(method, *args, **kwargs):
+        if method == "app.query":
+            raise TrueNASError("apps not configured")
+        raise AssertionError(method)
+
+    mock_client.call.side_effect = _boom
+    coordinator = AppsCoordinator(hass, mock_client)
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert coordinator.data == {}

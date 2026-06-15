@@ -176,3 +176,21 @@ async def test_datasets_absent_by_default(hass, mock_client) -> None:
         if e.platform == DOMAIN and "_dataset_" in (e.unique_id or "")
     ]
     assert dataset_entities == []
+
+
+async def test_app_vm_diagnostic_sensors(hass, init_integration) -> None:
+    """App state/version + VM state/memory/vcpus sensors exist, disabled by default."""
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    host_id = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    for uid in (
+        f"{host_id}_app_radarr_state",
+        f"{host_id}_app_radarr_version",
+        f"{host_id}_vm_1_state",
+        f"{host_id}_vm_1_memory",
+        f"{host_id}_vm_1_vcpus",
+    ):
+        entry = registry.async_get_entity_id("sensor", "truenas_ng", uid)
+        assert entry is not None, uid
+        assert registry.entities[entry].disabled_by is not None

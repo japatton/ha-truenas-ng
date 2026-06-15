@@ -1,0 +1,4 @@
+[
+  {"id": 1, "name": "media-vm", "status": {"state": "RUNNING", "pid": 1234, "domain_state": "RUNNING"}, "autostart": true, "memory": 8192, "vcpus": 2, "cores": 2, "threads": 1},
+  {"id": 2, "name": "test-vm", "status": {"state": "STOPPED", "pid": null, "domain_state": "SHUTOFF"}, "autostart": false, "memory": 4096, "vcpus": 1, "cores": 1, "threads": 1}
+]

@@ -270,3 +270,38 @@ async def test_options_flow_sets_intervals_and_toggles(
     assert init_integration.options[CONF_INTERVAL_STORAGE] == 45
     assert init_integration.options[CONF_ENABLE_DATASETS] is True
     assert init_integration.options["enable_reporting"] is False
+
+
+async def test_options_flow_apps_vms(hass: HomeAssistant, init_integration) -> None:
+    """The options flow exposes + stores the apps/VMs toggles and intervals."""
+    from custom_components.truenas_ng.const import CONF_ENABLE_APPS, CONF_INTERVAL_VMS
+
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    assert result["type"] is FlowResultType.FORM
+
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_reload", return_value=True
+    ):
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                "interval_storage": 30,
+                "interval_datasets": 300,
+                "interval_system": 60,
+                "interval_reporting": 20,
+                "interval_update": 21600,
+                "interval_apps": 120,
+                CONF_INTERVAL_VMS: 90,
+                "enable_datasets": True,
+                "enable_disks": True,
+                "enable_reporting": True,
+                "enable_service_controls": True,
+                CONF_ENABLE_APPS: False,
+                "enable_vms": True,
+            },
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert init_integration.options["interval_apps"] == 120
+    assert init_integration.options[CONF_ENABLE_APPS] is False

@@ -1,0 +1,5 @@
+[
+  {"name": "radarr", "state": "RUNNING", "version": "1.0.0", "latest_version": "1.1.0", "human_version": "5.0.0_1.0.0", "upgrade_available": true, "portals": {"Web UI": "https://truenas.local:30001/"}},
+  {"name": "jellyfin", "state": "RUNNING", "version": "2.0.0", "latest_version": "2.0.0", "human_version": "10.9.0_2.0.0", "upgrade_available": false, "portals": {}},
+  {"name": "sabnzbd", "state": "STOPPED", "version": "3.0.0", "latest_version": "3.0.0", "human_version": "4.3.0_3.0.0", "upgrade_available": false, "portals": {}}
+]

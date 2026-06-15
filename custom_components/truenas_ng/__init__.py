@@ -17,32 +17,42 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from .client import TrueNASAuthError, TrueNASClient, TrueNASError
 from .const import (
+    CONF_ENABLE_APPS,
     CONF_ENABLE_DATASETS,
     CONF_ENABLE_DISKS,
     CONF_ENABLE_REPORTING,
     CONF_ENABLE_SERVICE_CONTROLS,
+    CONF_ENABLE_VMS,
+    CONF_INTERVAL_APPS,
     CONF_INTERVAL_DATASETS,
     CONF_INTERVAL_REPORTING,
     CONF_INTERVAL_STORAGE,
     CONF_INTERVAL_SYSTEM,
     CONF_INTERVAL_UPDATE,
+    CONF_INTERVAL_VMS,
+    DEFAULT_ENABLE_APPS,
     DEFAULT_ENABLE_DATASETS,
     DEFAULT_ENABLE_DISKS,
     DEFAULT_ENABLE_REPORTING,
     DEFAULT_ENABLE_SERVICE_CONTROLS,
+    DEFAULT_ENABLE_VMS,
     PLATFORMS,
+    SCAN_INTERVAL_APPS,
     SCAN_INTERVAL_DATASETS,
     SCAN_INTERVAL_REPORTING,
     SCAN_INTERVAL_STORAGE,
     SCAN_INTERVAL_SYSTEM,
     SCAN_INTERVAL_UPDATE,
+    SCAN_INTERVAL_VMS,
 )
 from .coordinator import (
+    AppsCoordinator,
     DatasetCoordinator,
     ReportingCoordinator,
     StorageCoordinator,
     SystemCoordinator,
     UpdateCoordinator,
+    VMsCoordinator,
 )
 from .repairs import async_setup_alert_issues
 from .services import async_register_services, async_unregister_services
@@ -62,10 +72,14 @@ class TrueNASRuntimeData:
     system: SystemCoordinator
     reporting: ReportingCoordinator
     update: UpdateCoordinator
+    apps: AppsCoordinator
+    vms: VMsCoordinator
     enable_datasets: bool
     enable_disks: bool
     enable_reporting: bool
     enable_service_controls: bool
+    enable_apps: bool
+    enable_vms: bool
 
 
 type TrueNASConfigEntry = ConfigEntry[TrueNASRuntimeData]
@@ -121,12 +135,20 @@ async def async_setup_entry(
     update = UpdateCoordinator(
         hass, client, opts.get(CONF_INTERVAL_UPDATE, SCAN_INTERVAL_UPDATE)
     )
+    apps = AppsCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_APPS, SCAN_INTERVAL_APPS)
+    )
+    vms = VMsCoordinator(
+        hass, client, opts.get(CONF_INTERVAL_VMS, SCAN_INTERVAL_VMS)
+    )
 
     await storage.async_config_entry_first_refresh()
     await datasets.async_config_entry_first_refresh()
     await system.async_config_entry_first_refresh()
     await reporting.async_config_entry_first_refresh()
     await update.async_config_entry_first_refresh()
+    await apps.async_config_entry_first_refresh()
+    await vms.async_config_entry_first_refresh()
 
     entry.runtime_data = TrueNASRuntimeData(
         client=client,
@@ -137,12 +159,16 @@ async def async_setup_entry(
         system=system,
         reporting=reporting,
         update=update,
+        apps=apps,
+        vms=vms,
         enable_datasets=opts.get(CONF_ENABLE_DATASETS, DEFAULT_ENABLE_DATASETS),
         enable_disks=opts.get(CONF_ENABLE_DISKS, DEFAULT_ENABLE_DISKS),
         enable_reporting=opts.get(CONF_ENABLE_REPORTING, DEFAULT_ENABLE_REPORTING),
         enable_service_controls=opts.get(
             CONF_ENABLE_SERVICE_CONTROLS, DEFAULT_ENABLE_SERVICE_CONTROLS
         ),
+        enable_apps=opts.get(CONF_ENABLE_APPS, DEFAULT_ENABLE_APPS),
+        enable_vms=opts.get(CONF_ENABLE_VMS, DEFAULT_ENABLE_VMS),
     )
 
     async_setup_alert_issues(hass, entry)

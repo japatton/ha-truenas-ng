@@ -139,3 +139,19 @@ async def test_setup_entry_connection_error_retries(
 
     assert entry.state is ConfigEntryState.SETUP_RETRY
     mock_client.close.assert_called_once()
+
+
+async def test_runtime_data_has_apps_and_vms(hass, init_integration) -> None:
+    """Runtime data carries the Apps/VMs coordinators and default-on toggles."""
+    from custom_components.truenas_ng.coordinator import (
+        AppsCoordinator,
+        VMsCoordinator,
+    )
+
+    data = init_integration.runtime_data
+    assert isinstance(data.apps, AppsCoordinator)
+    assert isinstance(data.vms, VMsCoordinator)
+    assert set(data.apps.data) == {"radarr", "jellyfin", "sabnzbd"}
+    assert set(data.vms.data) == {1, 2}
+    assert data.enable_apps is True
+    assert data.enable_vms is True

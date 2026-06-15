@@ -65,6 +65,15 @@ def _build_dispatch() -> dict[str, object]:
         "service.control": None,
         "update.status": load_json_object_fixture("update_status.json"),
         "update.run": None,
+        "app.query": load_json_array_fixture("app_query.json"),
+        "vm.query": load_json_array_fixture("vm_query.json"),
+        "app.start": None,
+        "app.stop": None,
+        "app.redeploy": None,
+        "app.upgrade": None,
+        "vm.start": None,
+        "vm.stop": None,
+        "vm.restart": None,
     }
 
 
