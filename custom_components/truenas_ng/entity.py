@@ -23,6 +23,8 @@ class TrueNASEntity(CoordinatorEntity[_CoordT]):
         """Initialize the entity and remember the hub's host_id."""
         super().__init__(coordinator)
         self._host_id = host_id
+        # Registry id of the hub device, which pool/disk/app/VM devices link to.
+        self._hub_device_id: str = coordinator.config_entry.runtime_data.hub_device_id
 
 
 def hub_device_info(host_id: str, info: dict) -> DeviceInfo:
@@ -36,18 +38,22 @@ def hub_device_info(host_id: str, info: dict) -> DeviceInfo:
     )
 
 
-def pool_device_info(host_id: str, pool: dict) -> DeviceInfo:
-    """Build the DeviceInfo for a ZFS pool device, linked under the hub."""
+def pool_device_info(host_id: str, pool: dict, *, via: str | None) -> DeviceInfo:
+    """Build the DeviceInfo for a ZFS pool device, linked under the hub.
+
+    ``via`` is the hub's device registry id (``TrueNASRuntimeData.hub_device_id``)."""
     return DeviceInfo(
         identifiers={(DOMAIN, f"{host_id}_pool_{pool['guid']}")},
         name=f"Pool {pool['name']}",
         manufacturer=MANUFACTURER,
         model="ZFS Pool",
-        via_device=(DOMAIN, host_id),
+        via_device_id=via,
     )
 
 
-def disk_device_info(host_id: str, disk: dict, stable_id: str | None = None) -> DeviceInfo:
+def disk_device_info(
+    host_id: str, disk: dict, stable_id: str | None = None, *, via: str | None
+) -> DeviceInfo:
     """Build the DeviceInfo for a physical disk device, linked under the hub.
 
     ``stable_id`` should be the key under which this disk lives in the
@@ -63,11 +69,11 @@ def disk_device_info(host_id: str, disk: dict, stable_id: str | None = None) -> 
         name=f"Disk {disk.get('name', stable_id)}",
         manufacturer=MANUFACTURER,
         model=disk.get("model"),
-        via_device=(DOMAIN, host_id),
+        via_device_id=via,
     )
 
 
-def app_device_info(host_id: str, app: dict) -> DeviceInfo:
+def app_device_info(host_id: str, app: dict, *, via: str | None) -> DeviceInfo:
     """Build the DeviceInfo for a TrueNAS app device, linked under the hub."""
     name = app.get("name", "")
     return DeviceInfo(
@@ -76,16 +82,16 @@ def app_device_info(host_id: str, app: dict) -> DeviceInfo:
         manufacturer=MANUFACTURER,
         model="TrueNAS App",
         sw_version=app.get("human_version"),
-        via_device=(DOMAIN, host_id),
+        via_device_id=via,
     )
 
 
-def vm_device_info(host_id: str, vm: dict) -> DeviceInfo:
+def vm_device_info(host_id: str, vm: dict, *, via: str | None) -> DeviceInfo:
     """Build the DeviceInfo for a TrueNAS VM device, linked under the hub."""
     return DeviceInfo(
         identifiers={(DOMAIN, f"{host_id}_vm_{vm.get('id')}")},
         name=f"VM {vm.get('name', '')}",
         manufacturer=MANUFACTURER,
         model="TrueNAS VM",
-        via_device=(DOMAIN, host_id),
+        via_device_id=via,
     )

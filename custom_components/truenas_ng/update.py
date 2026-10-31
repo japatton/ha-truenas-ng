@@ -105,7 +105,7 @@ class TrueNASAppUpdateEntity(TrueNASEntity[AppsCoordinator], UpdateEntity):
         self._client = client
         self._app = name
         self._attr_unique_id = f"{host_id}_app_{name}_update"
-        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name], via=self._hub_device_id)
 
     @property
     def available(self) -> bool:

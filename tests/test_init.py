@@ -13,6 +13,7 @@ from homeassistant.const import (
     CONF_VERIFY_SSL,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.truenas_ng.client import TrueNASConnectionError
@@ -155,3 +156,24 @@ async def test_runtime_data_has_apps_and_vms(hass, init_integration) -> None:
     assert set(data.vms.data) == {1, 2}
     assert data.enable_apps is True
     assert data.enable_vms is True
+
+
+async def test_child_devices_link_to_hub_by_device_id(
+    hass: HomeAssistant, init_integration: MockConfigEntry
+) -> None:
+    """Setup registers the hub first; every pool/disk/app/VM device links to its id.
+
+    HA 2026.9 deprecated ``via_device`` (removed in 2027.8) in favour of the parent's
+    registry id, ``via_device_id``.
+    """
+    registry = dr.async_get(hass)
+    hub = registry.async_get_device_by_identifier(
+        (DOMAIN, HOST_ID), init_integration.entry_id
+    )
+    assert hub is not None
+    assert init_integration.runtime_data.hub_device_id == hub.id
+
+    devices = dr.async_entries_for_config_entry(registry, init_integration.entry_id)
+    children = [device for device in devices if device.id != hub.id]
+    assert children
+    assert all(device.via_device_id == hub.id for device in children)

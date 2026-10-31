@@ -14,6 +14,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 
 from .client import TrueNASAuthError, TrueNASClient, TrueNASError
 from .const import (
@@ -54,6 +55,7 @@ from .coordinator import (
     UpdateCoordinator,
     VMsCoordinator,
 )
+from .entity import hub_device_info
 from .repairs import async_setup_alert_issues
 from .services import async_register_services, async_unregister_services
 
@@ -66,6 +68,7 @@ class TrueNASRuntimeData:
 
     client: TrueNASClient
     host_id: str
+    hub_device_id: str
     physmem: int
     storage: StorageCoordinator
     datasets: DatasetCoordinator
@@ -150,9 +153,16 @@ async def async_setup_entry(
     await apps.async_config_entry_first_refresh()
     await vms.async_config_entry_first_refresh()
 
+    # Register the hub before any platform: pool, disk, app and VM devices link to
+    # it by its registry id (via_device_id), which only exists once it is registered.
+    hub = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, **hub_device_info(host_id, info)
+    )
+
     entry.runtime_data = TrueNASRuntimeData(
         client=client,
         host_id=host_id,
+        hub_device_id=hub.id,
         physmem=physmem,
         storage=storage,
         datasets=datasets,

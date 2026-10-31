@@ -30,12 +30,12 @@ def test_hub_device_info() -> None:
 
 
 def test_pool_device_info() -> None:
-    """pool_device_info uses the pool guid and links back to the hub via_device."""
+    """pool_device_info uses the pool guid and links back to the hub device id."""
     pools = load_json_array_fixture("pool_query.json")
     pool = pools[0]
     assert pool["guid"] == "1111111111111111111"
 
-    device = pool_device_info(HOST_ID, pool)
+    device = pool_device_info(HOST_ID, pool, via="hub-device-id")
 
     assert device["identifiers"] == {
         (DOMAIN, f"{HOST_ID}_pool_1111111111111111111")
@@ -43,22 +43,24 @@ def test_pool_device_info() -> None:
     assert device["name"] == "Pool Data"
     assert device["manufacturer"] == MANUFACTURER
     assert device["model"] == "ZFS Pool"
-    assert device["via_device"] == (DOMAIN, HOST_ID)
+    assert device["via_device_id"] == "hub-device-id"
+    assert "via_device" not in device
 
 
 def test_disk_device_info() -> None:
-    """disk_device_info names the disk and links it to the hub via_device."""
+    """disk_device_info names the disk and links it to the hub device id."""
     disks = load_json_array_fixture("disk_query.json")
     disk = next(d for d in disks if d["name"] == "sda")
     assert disk["serial"] == "WD-DEADBEEF01"
 
-    device = disk_device_info(HOST_ID, disk)
+    device = disk_device_info(HOST_ID, disk, via="hub-device-id")
 
     assert device["identifiers"] == {(DOMAIN, f"{HOST_ID}_disk_WD-DEADBEEF01")}
     assert device["name"] == "Disk sda"
     assert device["manufacturer"] == MANUFACTURER
     assert device["model"] == "WDC WD20EFZX-68AWUN0"
-    assert device["via_device"] == (DOMAIN, HOST_ID)
+    assert device["via_device_id"] == "hub-device-id"
+    assert "via_device" not in device
 
 
 def test_hub_device_info_falls_back_when_fields_missing() -> None:

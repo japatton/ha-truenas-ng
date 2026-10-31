@@ -65,7 +65,7 @@ class TrueNASPoolHealthBinarySensor(
         self._guid = guid
         self._attr_unique_id = f"{host_id}_pool_{guid}_health"
         self._attr_device_info = pool_device_info(
-            host_id, coordinator.data.pools[guid]
+            host_id, coordinator.data.pools[guid], via=self._hub_device_id
         )
 
     @property
@@ -99,7 +99,7 @@ class TrueNASDiskProblemBinarySensor(
         self._stable_id = stable_id
         self._attr_unique_id = f"{host_id}_disk_{stable_id}_problem"
         self._attr_device_info = disk_device_info(
-            host_id, coordinator.data.disks[stable_id], stable_id
+            host_id, coordinator.data.disks[stable_id], stable_id, via=self._hub_device_id
         )
 
     @property

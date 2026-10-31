@@ -121,7 +121,7 @@ class TrueNASAppSwitch(TrueNASEntity[AppsCoordinator], SwitchEntity):
         self._client = client
         self._app = name
         self._attr_unique_id = f"{host_id}_app_{name}_switch"
-        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name], via=self._hub_device_id)
 
     @property
     def available(self) -> bool:
@@ -172,7 +172,7 @@ class TrueNASVMSwitch(TrueNASEntity[VMsCoordinator], SwitchEntity):
         self._client = client
         self._vm_id = vm_id
         self._attr_unique_id = f"{host_id}_vm_{vm_id}_switch"
-        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id])
+        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id], via=self._hub_device_id)
 
     @property
     def available(self) -> bool:

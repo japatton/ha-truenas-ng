@@ -16,10 +16,10 @@ committed ruff config — defaults apply).
 
 ## Test
 ```
-pip install pytest-homeassistant-custom-component==0.13.330 websocket-client==1.9.0
+pip install pytest-homeassistant-custom-component==0.13.375 websocket-client==1.9.0
 pytest tests/ -q
 ```
-PHACC pins HA `2026.5.1`; run on Python 3.14. See `reference_ha_custom_integration_testing.md`
+PHACC pins HA `2026.10.4`; run on Python 3.14. See `reference_ha_custom_integration_testing.md`
 for HA-specific mocking/fixture gotchas.
 
 ## Pre-push verification

@@ -380,7 +380,7 @@ class TrueNASPoolSensor(TrueNASEntity[StorageCoordinator], SensorEntity):
         self.entity_description = description
         self._guid = guid
         self._attr_unique_id = f"{host_id}_pool_{guid}_{description.key}"
-        self._attr_device_info = pool_device_info(host_id, self._pool)
+        self._attr_device_info = pool_device_info(host_id, self._pool, via=self._hub_device_id)
 
     @property
     def _pool(self) -> dict:
@@ -452,7 +452,7 @@ class TrueNASDiskSensor(TrueNASEntity[StorageCoordinator], SensorEntity):
         # F5: stable_id is the coordinator-dict key, consistent with disk_device_info
         self._stable_id = stable_id
         self._attr_unique_id = f"{host_id}_disk_{stable_id}_{description.key}"
-        self._attr_device_info = disk_device_info(host_id, self._disk, stable_id)
+        self._attr_device_info = disk_device_info(host_id, self._disk, stable_id, via=self._hub_device_id)
 
     @property
     def _disk(self) -> dict:
@@ -633,7 +633,7 @@ class TrueNASAppSensor(TrueNASEntity[AppsCoordinator], SensorEntity):
         self.entity_description = description
         self._app = name
         self._attr_unique_id = f"{host_id}_app_{name}_{description.key}"
-        self._attr_device_info = app_device_info(host_id, coordinator.data[name])
+        self._attr_device_info = app_device_info(host_id, coordinator.data[name], via=self._hub_device_id)
 
     @property
     def available(self) -> bool:
@@ -702,7 +702,7 @@ class TrueNASVMSensor(TrueNASEntity[VMsCoordinator], SensorEntity):
         self.entity_description = description
         self._vm_id = vm_id
         self._attr_unique_id = f"{host_id}_vm_{vm_id}_{description.key}"
-        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id])
+        self._attr_device_info = vm_device_info(host_id, coordinator.data[vm_id], via=self._hub_device_id)
 
     @property
     def available(self) -> bool:
@@ -726,6 +726,7 @@ async def async_setup_entry(
     """Set up truenas_ng sensors from a config entry."""
     data = entry.runtime_data
     host_id = data.host_id
+    hub_id = data.hub_device_id
     entities: list[SensorEntity] = []
 
     # System info sensors + active-alerts sensor.
@@ -772,7 +773,7 @@ async def async_setup_entry(
         for dataset_id, dataset in data.datasets.data.items():
             real_pool = pools_by_name.get(dataset.get("pool"))
             if real_pool is not None:
-                dataset_device_info: DeviceInfo = pool_device_info(host_id, real_pool)
+                dataset_device_info: DeviceInfo = pool_device_info(host_id, real_pool, via=hub_id)
             else:
                 dataset_device_info = hub_device_info(host_id, system_info)
             for dataset_description in DATASET_SENSORS:
