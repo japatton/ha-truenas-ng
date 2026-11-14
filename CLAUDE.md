@@ -25,8 +25,8 @@ for HA-specific mocking/fixture gotchas.
 ## Pre-push verification
 CI (`.github/workflows/validate.yml`) runs HACS validation, Hassfest, and
 `pytest tests/ -q` on every push/PR — run ruff + the pytest command above locally
-first. Bump `manifest.json` version and re-run the live-test recipe (mint a
-throwaway `hauser` API key, connect `wss://truenas.homelab.jp-labs.net:9443`)
+first. Bump `manifest.json` version and re-run the live-test recipe in the vault
+note below (a throwaway API key against a real TrueNAS 26 box over `wss://`)
 before tagging a release.
 
 ## Deploy notes
