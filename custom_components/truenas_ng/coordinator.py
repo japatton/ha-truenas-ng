@@ -334,15 +334,21 @@ class AppsCoordinator(TrueNASBaseCoordinator[dict[str, dict]]):
     ) -> None:
         """Initialize the apps coordinator."""
         super().__init__(hass, client, "TrueNAS Apps", interval or SCAN_INTERVAL_APPS)
+        # Whether the last app.query answered. The empty dict after an error means
+        # "unknown", not "no apps", so device cleanup must not act on it.
+        self.listing_ok = False
 
     def _fetch(self) -> dict[str, dict]:
         """Query apps; return empty (logged) if the apps subsystem errors."""
+        self.listing_ok = False
         try:
             raw = self.client.call("app.query")
         except TrueNASError as err:
             _LOGGER.warning("TrueNAS app.query failed; no app entities (%s)", err)
             return {}
-        return {app["name"]: app for app in raw}
+        apps = {app["name"]: app for app in raw}
+        self.listing_ok = True
+        return apps
 
 
 class VMsCoordinator(TrueNASBaseCoordinator[dict[int, dict]]):
@@ -353,12 +359,17 @@ class VMsCoordinator(TrueNASBaseCoordinator[dict[int, dict]]):
     ) -> None:
         """Initialize the VMs coordinator."""
         super().__init__(hass, client, "TrueNAS VMs", interval or SCAN_INTERVAL_VMS)
+        # Whether the last vm.query answered (see AppsCoordinator.listing_ok).
+        self.listing_ok = False
 
     def _fetch(self) -> dict[int, dict]:
         """Query VMs; return empty (logged) if the virt subsystem errors."""
+        self.listing_ok = False
         try:
             raw = self.client.call("vm.query")
         except TrueNASError as err:
             _LOGGER.warning("TrueNAS vm.query failed; no VM entities (%s)", err)
             return {}
-        return {vm["id"]: vm for vm in raw}
+        vms = {vm["id"]: vm for vm in raw}
+        self.listing_ok = True
+        return vms

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
@@ -55,6 +55,7 @@ from .coordinator import (
     UpdateCoordinator,
     VMsCoordinator,
 )
+from .device_cleanup import RemovedDeviceCleaner, device_is_removable
 from .entity import hub_device_info
 from .repairs import async_setup_alert_issues
 from .services import async_register_services, async_unregister_services
@@ -181,6 +182,18 @@ async def async_setup_entry(
         enable_vms=opts.get(CONF_ENABLE_VMS, DEFAULT_ENABLE_VMS),
     )
 
+    # Drop the devices of apps and VMs that TrueNAS no longer lists, with their
+    # entities. Only while that group's entities are on, so a coordinator doesn't
+    # keep polling for this alone.
+    for enabled, coordinator, kind in (
+        (entry.runtime_data.enable_apps, apps, "app"),
+        (entry.runtime_data.enable_vms, vms, "vm"),
+    ):
+        if enabled:
+            cleaner = RemovedDeviceCleaner(hass, entry, coordinator, kind)
+            cleaner.async_check()  # counts the first refresh's listing
+            entry.async_on_unload(coordinator.async_add_listener(cleaner.async_check))
+
     async_setup_alert_issues(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     async_register_services(hass)
@@ -204,3 +217,17 @@ async def async_unload_entry(
         await hass.async_add_executor_job(entry.runtime_data.client.close)
         async_unregister_services(hass)
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: TrueNASConfigEntry, device_entry: dr.DeviceEntry
+) -> bool:
+    """Let the user delete a child device that TrueNAS no longer reports.
+
+    The hub, and anything TrueNAS still reports, stay: the integration would only
+    add them back.
+    """
+    if config_entry.state is not ConfigEntryState.LOADED:
+        # Without a live connection there's no telling what TrueNAS still reports.
+        return False
+    return device_is_removable(config_entry.runtime_data, device_entry)

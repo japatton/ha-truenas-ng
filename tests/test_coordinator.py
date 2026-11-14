@@ -279,6 +279,7 @@ async def test_apps_coordinator_parses(hass, mock_client) -> None:
     assert coordinator.last_update_success
     assert set(coordinator.data) == {"radarr", "jellyfin", "sabnzbd"}
     assert coordinator.data["radarr"]["upgrade_available"] is True
+    assert coordinator.listing_ok is True
 
 
 async def test_vms_coordinator_parses(hass, mock_client) -> None:
@@ -290,6 +291,7 @@ async def test_vms_coordinator_parses(hass, mock_client) -> None:
     assert coordinator.last_update_success
     assert set(coordinator.data) == {1, 2}
     assert coordinator.data[1]["status"]["state"] == "RUNNING"
+    assert coordinator.listing_ok is True
 
 
 async def test_apps_coordinator_graceful_on_error(hass, mock_client) -> None:
@@ -307,3 +309,23 @@ async def test_apps_coordinator_graceful_on_error(hass, mock_client) -> None:
     await coordinator.async_refresh()
     assert coordinator.last_update_success
     assert coordinator.data == {}
+    # The empty dict means "unknown", not "no apps".
+    assert coordinator.listing_ok is False
+
+
+async def test_vms_coordinator_graceful_on_error(hass, mock_client) -> None:
+    """A failing vm.query yields empty data and an unanswered listing."""
+    from custom_components.truenas_ng.client import TrueNASError
+    from custom_components.truenas_ng.coordinator import VMsCoordinator
+
+    def _boom(method, *args, **kwargs):
+        if method == "vm.query":
+            raise TrueNASError("virtualization not available")
+        raise AssertionError(method)
+
+    mock_client.call.side_effect = _boom
+    coordinator = VMsCoordinator(hass, mock_client)
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert coordinator.data == {}
+    assert coordinator.listing_ok is False

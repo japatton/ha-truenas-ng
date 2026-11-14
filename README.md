@@ -15,6 +15,7 @@ A HACS-distributed custom [Home Assistant](https://www.home-assistant.io/) integ
 - **Alerts** — a sensor counting active alerts, and `WARNING`/`CRITICAL` alerts surfaced as Home Assistant **Repairs** issues (with a one-click dismiss flow).
 - **Controls** — **Reboot** and **Shutdown** buttons for the appliance.
 - **Diagnostics** — downloadable, API-key-redacted config + coordinator snapshots from the device page.
+- **Cleanup** — when an app or VM is removed from TrueNAS, its device and entities leave Home Assistant on their own, once two app (or VM) polls in a row no longer list it. The device of a replaced disk or an exported pool can be deleted from its device page.
 
 ## Requirements
 
